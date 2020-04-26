@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">Encuesta Estudiantil</string>
+    <string name="Texto_codigo">Codigo Estudiantil </string>
+    <string name="Texto_nombre">Nombre </string>
+    <string name="Texto_programa">Programa</string>
+    <string name="Texto_compu">Tiene una Computador</string>
+    <string name="Texto_celular">Tiene un Smartphone </string>
+    <string name="Texto_internet">Tiene Acceso a internet</string>
+    <string name="Hint_codigo">digite el codigo estudiantil</string>
+    <string name="Hint_nombre">digite el nombre</string>
+    <string name="Texto_si">Si</string>
+    <string name="Texto_no">No</string>
+    <string name="texto_guardar">Registrar</string>
+    <string name="Texto_listado">Lista</string>
+    <string name="texto_ttitulo">Lista de estudiantes encuestados</string>
+
+    <string name="item_codigos">Codigo Estudiantil: </string>
+    <string name="item_programas">Programa: </string>
+    <string name="item_pc">Computador: </string>
+    <string name="item_smart">Smartphone: </string>
+    <string name="item_internet">Acceso a internet: </string>
+    <string name="item_nombre">Nombre:</string>
+    <string name="texto_actualizar">Actualizar</string>
+    <string name="texto_eliminar">Eliminar</string>
+
+    <string-array name="Progrmas">
+        <item>Electronica</item>
+        <item>Industrial</item>
+        <item>Mecánica</item>
+        <item>Mecatrónica</item>
+        <item>Sistemas</item>
+    </string-array>
+</resources>
