@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -17,6 +18,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
+    ControladorBD controlador;
     Spinner programas;
     EditText codigo,nombre;
     RadioGroup RBcomputador,RBsmartphone,RBinternet;
@@ -37,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         guardar=findViewById(R.id.btnGuardar);
         listado=findViewById(R.id.btnLista);
 
+        controlador= new ControladorBD(getApplicationContext());
 
         ArrayAdapter<CharSequence> adapter=ArrayAdapter.createFromResource(this,R.array.Progrmas,android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -92,9 +95,22 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(codigo.getText().toString().trim().length()==0){
                     Toast.makeText(getApplicationContext(), "Error en el ingreso de datos, verifique la seleccionde datos", Toast.LENGTH_SHORT).show();
-                }else{
+                } else{
                     Estudiante est = new Estudiante(codigo.getText().toString().trim(),nombre.getText().toString(), Sprograma, Scomputador, Ssmartphone, Sinternet);
-                    RegistrarEstudiante();
+                    if (!controlador.buscarEstudiante(codigo.getText().toString().trim())){
+                        Log.d("Buscar", "No encontrado");
+                        long retorno = controlador.agregarRegistro(est);
+                        if (retorno != -1) {
+                            Toast.makeText(v.getContext(), "Estudiante guardado", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(v.getContext(), "registro fallido", Toast.LENGTH_SHORT).show();
+                        }
+                    }else{
+                        Log.d("Buscar", "encontrado");
+                        Toast.makeText(getApplicationContext(),"Estudiante ya esta registrado",Toast.LENGTH_SHORT).show();
+                    }
+
+                    limpiar();
                 }
 
                 }
@@ -111,52 +127,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void RegistrarEstudiante(){
-            BaseDatos db=new BaseDatos(this,DefDB.nameDb,null,1);
-            SQLiteDatabase escritura = db.getWritableDatabase();
-
-            if(!BuscarEstudiante()){
-                ContentValues valores = new ContentValues();
-                valores.put(DefDB.col_codigo,codigo.getText().toString().trim());
-                valores.put(DefDB.col_nombre,nombre.getText().toString());
-                valores.put(DefDB.col_programa,Sprograma);
-                valores.put(DefDB.col_computador,Scomputador);
-                valores.put(DefDB.col_smartphone,Ssmartphone);
-                valores.put(DefDB.col_internet,Sinternet);
-                escritura.insert(DefDB.tabla_est,null,valores);
-                db.close();
-                Toast.makeText(this,"Registro exitoso",Toast.LENGTH_SHORT).show();
-                limpiar();
-            }
-
-
-    }
-
-   private boolean BuscarEstudiante() {
-        BaseDatos db = new BaseDatos(this, DefDB.nameDb, null, 1);
-        SQLiteDatabase lectura = db.getReadableDatabase();
-
-        if (codigo.getText().toString().trim().length()>0) {
-            String[] args = new String[]{codigo.getText().toString().trim()};
-            Cursor puntero = lectura.query(DefDB.tabla_est,null,"codigo=?",args,null,null,null);
-
-            if (puntero.getCount()>0) {
-                limpiar();
-                Toast.makeText(this, "Estudiante ya registrado", Toast.LENGTH_SHORT).show();
-                lectura.close();
-                return true;
-            } else {
-                lectura.close();
-                return false;
-            }
-        }
-        return false;
-    }
-
     private void limpiar() {
         codigo.setText("");
         nombre.setText("");
     }
+
 }
 
 

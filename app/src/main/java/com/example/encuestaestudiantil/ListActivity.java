@@ -1,97 +1,166 @@
 package com.example.encuestaestudiantil;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.MenuItemCompat;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
-public class ListActivity extends AppCompatActivity {
+public class ListActivity extends AppCompatActivity implements SearchView.OnQueryTextListener{
 
-    ArrayList<Estudiante> listaEstudiantes;
-    ArrayList<String> listainfo;
+    ListView lista;
 
-    ListView litsItems;
-    BaseDatos conn;
+    ArrayList<Estudiante> listaEstudiante;
+
+    ControladorBD controlador;
+
+    ListaEstudiantesAdapter adapter;
+
+    SearchView buscador;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
 
-        conn=new BaseDatos(getApplicationContext(),DefDB.nameDb,null,1);
-        litsItems=findViewById(R.id.idListview);
+        controlador = new ControladorBD(getApplicationContext());
+        lista = findViewById(R.id.idListview);
+        listaEstudiante = controlador.obtenerRegistros();
 
-        ArrayAdapter adaptador=new ArrayAdapter(this,android.R.layout.simple_list_item_1,listainfo);
-        litsItems.setAdapter(adaptador);
+        adapter = new ListaEstudiantesAdapter(getApplicationContext(), R.layout.item_list, listaEstudiante);
+        lista.setAdapter(adapter);
 
-        consultarListaEstudiantes();
+        registerForContextMenu(lista);
 
-        litsItems.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+    }
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 2) {
+            if (resultCode == Activity.RESULT_OK) {
+                ArrayList<Estudiante> listaEstudents = controlador.obtenerRegistros();
+                ListaEstudiantesAdapter adaptador = new ListaEstudiantesAdapter(getApplicationContext(), R.layout.item_list, listaEstudents);
+                lista.setAdapter(adaptador);
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(), "modificacion cancelada", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        getMenuInflater().inflate(R.menu.menu_lista, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
+
+        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
+        switch (item.getItemId()) {
+            case R.id.IdModificar:
+                modificarRegistro(menuInfo.position);
+                return true;
+            case R.id.IdEliminar:
+                borrarRegistro(menuInfo.position);
+                return true;
+        }
+        return super.onContextItemSelected(item);
+    }
+
+    private void modificarRegistro(int posicion) {
+        Intent intent = new Intent(this, ItemActivity.class);
+        intent.putExtra("indice", posicion);
+        startActivityForResult(intent, 2);
+    }
+
+    private void borrarRegistro(int posicion) {
+        int retorno = controlador.borrarRegistro(listaEstudiante.get(posicion));
+        if (retorno == 1) {
+            Toast.makeText(getApplicationContext(), "registro eliminado", Toast.LENGTH_SHORT).show();
+            listaEstudiante = controlador.obtenerRegistros();
+            adapter = new ListaEstudiantesAdapter(getApplicationContext(), R.layout.item_list, listaEstudiante);
+            lista.setAdapter(adapter);
+        } else {
+            Toast.makeText(getApplicationContext(), "error al borrar", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_searchin, menu);
+        MenuItem item= menu.findItem(R.id.idbuscador);
+        SearchView searchView=(SearchView) MenuItemCompat.getActionView(item);
+        searchView.setOnQueryTextListener(this);
+        MenuItemCompat.setOnActionExpandListener(item, new MenuItemCompat.OnActionExpandListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int pos, long i) {
-                String informacion="Codigo: "+ listaEstudiantes.get(pos).getCodigo()+"\n";
-                informacion+="Nombre: "+ listaEstudiantes.get(pos).getNombre()+"\n";
-                informacion+="Programa: "+ listaEstudiantes.get(pos).getProgama()+"\n";
-                informacion+="Computador: "+ listaEstudiantes.get(pos).getComputador()+"\n";
-                informacion+="Smartphone: "+ listaEstudiantes.get(pos).getSmartphone()+"\n";
-                informacion+="Internet: "+ listaEstudiantes.get(pos).getInternet()+"\n";
+            public boolean onMenuItemActionExpand(MenuItem item) {
 
-                Toast.makeText(getApplicationContext(),informacion,Toast.LENGTH_LONG).show();
+                return false;
+            }
 
-                Estudiante user= listaEstudiantes.get(pos);
-
-                Intent intent=new Intent(ListActivity.this,ItemActivity.class);
-
-                Bundle bundle=new Bundle();
-                bundle.putSerializable("Estudiante",user);
-
-                intent.putExtras(bundle);
-                startActivity(intent);
+            @Override
+            public boolean onMenuItemActionCollapse(MenuItem item) {
+                adapter.setFilter(listaEstudiante);
+                return true;
             }
         });
-
-        
-        
+        return true;
     }
 
-    private void consultarListaEstudiantes() {
-        SQLiteDatabase data=conn.getReadableDatabase();
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
 
-        Estudiante est;
-        listaEstudiantes =new ArrayList<Estudiante>();
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        try {
 
-        Cursor cursor=data.rawQuery("SELECT * FROM "+DefDB.tabla_est,null);
+            ArrayList<Estudiante>listafiltrada=filter(listaEstudiante,newText);
+           adapter.setFilter(listafiltrada);
 
-        while (cursor.moveToNext()){
-            est=new Estudiante();
-            est.setCodigo(cursor.getString(0));
-            est.setNombre(cursor.getString(1));
-            est.setProgama(cursor.getString(2));
-            est.setComputador(cursor.getString(3));
-            est.setSmartphone(cursor.getString(4));
-            est.setInternet(cursor.getString(5));
-
-            listaEstudiantes.add(est);
+        }catch (Exception e){
+            e.printStackTrace();
         }
-        obtenerLista();
+        return false;
     }
-    private void obtenerLista() {
-        listainfo=new ArrayList<String>();
+    private ArrayList<Estudiante> filter(ArrayList<Estudiante> estudiantes,String texto){
+        ArrayList<Estudiante>listaFiltrada=new ArrayList<>();
+        try{
+            texto=texto.toLowerCase();
 
-        for (int i = 0; i< listaEstudiantes.size(); i++){
-            listainfo.add(listaEstudiantes.get(i).getCodigo()+" - "
-                    + listaEstudiantes.get(i).getNombre());
+            for(Estudiante estu : estudiantes){
+                String cod=estu.getCodigo().toString();
+                String nom=estu.getNombre().toLowerCase();
+                String prog=estu.getProgama().toLowerCase();
+                if (cod.contains(texto) || nom.contains(texto) || prog.contains(texto)){
+                    listaFiltrada.add(estu);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
-
+        return listaFiltrada;
     }
-
 }
-

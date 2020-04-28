@@ -10,23 +10,24 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class ListaEstudiantesAdapter extends BaseAdapter {
-    private Context context;
-    private ArrayList<Estudiante> ListItems;
+    private ArrayList<Estudiante> lista;
+    private Context contexto;
+    private int layoutRecurso;
 
-    public ListaEstudiantesAdapter(Context context, ArrayList<Estudiante> listItems) {
-        this.context = context;
-        ListItems = listItems;
+    public ListaEstudiantesAdapter( Context contexto, int layoutRecurso, ArrayList<Estudiante> lista) {
+        this.lista = lista;
+        this.contexto = contexto;
+        this.layoutRecurso = layoutRecurso;
     }
-
 
     @Override
     public int getCount() {
-        return ListItems.size();
+        return lista.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return ListItems.get(position);
+        return lista.get(position);
     }
 
     @Override
@@ -36,23 +37,34 @@ public class ListaEstudiantesAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        Estudiante Item=(Estudiante) getItem(position);
+        View view = convertView;
+        if (view == null) {
+            view = LayoutInflater.from(contexto).inflate(layoutRecurso, null);
+        }
 
-        convertView= LayoutInflater.from(context).inflate(R.layout.item_list,null);
-        TextView codigolis=convertView.findViewById(R.id.textCodigo);
-        TextView nombrelis=convertView.findViewById(R.id.txtNombre);
-        TextView progrmalis=convertView.findViewById(R.id.txtPrograma);
-        TextView computalis=convertView.findViewById(R.id.txtComputador);
-        TextView smartlis=convertView.findViewById(R.id.txtSmart);
-        TextView internetlis=convertView.findViewById(R.id.txtInternet);
+        Estudiante estudiante=lista.get(position);
 
 
-        codigolis.setText(Item.getCodigo());
-        nombrelis.setText(Item.getNombre());
-        progrmalis.setText(Item.getProgama());
-        computalis.setText(Item.getComputador());
-        smartlis.setText(Item.getSmartphone());
-        internetlis.setText(Item.getInternet());
-        return convertView;
+        TextView codigolis=view.findViewById(R.id.textCodigo);
+        TextView nombrelis=view.findViewById(R.id.txtNombre);
+        TextView progrmalis=view.findViewById(R.id.txtPrograma);
+        TextView computalis=view.findViewById(R.id.txtComputador);
+        TextView smartlis=view.findViewById(R.id.txtSmart);
+        TextView internetlis=view.findViewById(R.id.txtInternet);
+
+
+        codigolis.setText(estudiante.getCodigo());
+        nombrelis.setText(estudiante.getNombre());
+        progrmalis.setText(estudiante.getProgama());
+        computalis.setText(estudiante.getComputador());
+        smartlis.setText(estudiante.getSmartphone());
+        internetlis.setText(estudiante.getInternet());
+        return view;
+    }
+
+    public void setFilter(ArrayList<Estudiante> listaestudiante){
+        this.lista=new ArrayList<>();
+        this.lista.addAll(listaestudiante);
+        notifyDataSetChanged();
     }
 }
